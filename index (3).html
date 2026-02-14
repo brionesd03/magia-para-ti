@@ -1,0 +1,538 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>San Valentín — Carta Clow</title>
+  <style>
+    :root{
+      --bg1:#fce4ec;
+      --bg2:#f48fb1;
+
+      --panel:#ffffffee;
+      --shadow: 0 18px 55px rgba(0,0,0,.14);
+
+      --cream1:#fff8e1;
+      --cream2:#fff3e0;
+
+      --red:#d32f2f;
+      --redDark:#b71c1c;
+
+      --gold:#d1a23a;
+      --goldLine: rgba(255,202,40,.95);
+
+      --pinkBorder:#f8bbd0;
+      --pinkText:#ad1457;
+
+      --text:#2b2b2b;
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+
+    /* Usa svh para estabilidad en mobile; fallback a vh */
+    body{
+      margin:0;
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Noto Sans";
+      color:var(--text);
+      overflow:hidden;
+      background: linear-gradient(135deg,var(--bg1),var(--bg2));
+      -webkit-tap-highlight-color: transparent;
+      height: 100vh;
+      height: 100svh;
+    }
+
+    /* ===== Petals ===== */
+    .petals{
+      position:fixed; inset:0;
+      pointer-events:none;
+      overflow:hidden;
+      z-index:0;
+    }
+    .petal{
+      position:absolute; top:-12vh;
+      width:14px; height:12px;
+      opacity:.85; border-radius:70%;
+      filter: drop-shadow(0 3px 4px rgba(0,0,0,.10));
+      background: radial-gradient(circle at 30% 35%, #fff 0 12%, #f9b3c8 18%, #f48fb1 55%, #f06292 100%);
+      clip-path: path("M 7 0 C 9 0, 14 2, 14 6 C 14 10, 9 12, 7 12 C 5 12, 0 10, 0 6 C 0 2, 5 0, 7 0 Z");
+      animation: fall linear infinite, drift ease-in-out infinite;
+    }
+    .petal::after{
+      content:"";
+      position:absolute; inset:0;
+      border-radius:inherit;
+      background: radial-gradient(circle at 60% 60%, rgba(255,255,255,.55), rgba(255,255,255,0) 58%);
+    }
+    @keyframes fall{ to { transform: translateY(130vh) rotate(360deg); } }
+    @keyframes drift{
+      0%{ margin-left:0; }
+      50%{ margin-left:42px; }
+      100%{ margin-left:0; }
+    }
+
+    /* ===== Layout ===== */
+    .wrap{
+      position:relative; z-index:1;
+      height: 100vh;
+      height: 100svh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 14px 12px;
+    }
+
+    .panel{
+      width: min(560px, 94vw);
+
+      /* panel estable en svh */
+      height: calc(100svh - 28px);
+      max-height: 860px;
+
+      background: var(--panel);
+      backdrop-filter: blur(7px);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(255,255,255,.65);
+
+      padding: 18px 16px calc(14px + env(safe-area-inset-bottom));
+      overflow:hidden;
+
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+
+    /* CAMBIO AQUÍ: flex-direction column para apilar corazón y texto */
+    .top{
+      display:flex;
+      flex-direction: column;
+      align-items:center;
+      justify-content:center;
+      gap: 8px;
+      padding-top:4px;
+      flex:0 0 auto;
+    }
+    .title{
+      font-weight: 900;
+      font-size: clamp(16px, 4.3vw, 20px);
+      letter-spacing: .2px;
+      text-align: center;
+    }
+
+    /* Heart */
+    .heart{
+      width: 24px; /* Un poquito más grande para que resalte */
+      height: 24px;
+      position: relative;
+      transform: rotate(-45deg);
+      animation: beat 1.05s infinite ease-in-out;
+      filter: drop-shadow(0 6px 10px rgba(211,47,47,.22));
+      flex:0 0 auto;
+    }
+    .heart::before, .heart::after{
+      content:"";
+      position:absolute;
+      width:24px;height:24px;
+      background: var(--red);
+      border-radius:50%;
+    }
+    .heart::before{ top:-12px; left:0; }
+    .heart::after{ top:0; left:12px; }
+    .heart span{
+      position:absolute;
+      inset:0;
+      background: var(--red);
+      border-radius:3px;
+    }
+    @keyframes beat{
+      0%,100%{ transform: rotate(-45deg) scale(1); }
+      25%{ transform: rotate(-45deg) scale(1.08); }
+      40%{ transform: rotate(-45deg) scale(.99); }
+      60%{ transform: rotate(-45deg) scale(1.12); }
+      80%{ transform: rotate(-45deg) scale(1.03); }
+    }
+
+    .hint{
+      text-align:center;
+      font-size: 13px;
+      opacity:.92;
+      margin: 0;
+      line-height:1.25;
+      flex:0 0 auto;
+    }
+    .hint strong{ color: var(--pinkText); }
+
+    /* Centro estable */
+    .center{
+      flex:1 1 auto;
+      min-height:0;
+      position:relative;
+    }
+    /* Escenario absoluto para que la carta nunca “re-centre” por cambios de layout */
+    .stage{
+      position:absolute;
+      inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+
+    /* Carta: NO usa vh. Usa clamp con svh como límite estable */
+    .flipBtn{
+      width: min(392px, 88vw);
+
+      /* alto estable: base 520px, pero si pantalla es pequeña reduce con svh estable */
+      height: clamp(360px, 520px, 520px);
+      max-height: 58svh;
+
+      aspect-ratio: 3 / 4;
+      padding:0;
+      border:0;
+      background:transparent;
+      cursor: grab;
+      display:block;
+
+      touch-action:none;
+      user-select:none;
+      -webkit-user-select:none;
+      -webkit-touch-callout:none;
+
+      perspective: 1200px;
+      -webkit-perspective: 1200px;
+      position:relative;
+    }
+    .flipBtn:active{ cursor:grabbing; }
+
+    /* Giro final SOLO por CSS */
+    .inner{
+      width:100%;
+      height:100%;
+      position:relative;
+
+      transform-style: preserve-3d;
+      -webkit-transform-style: preserve-3d;
+
+      transition: transform 820ms cubic-bezier(.2,.78,.2,1);
+      will-change: transform;
+
+      transform-origin: 50% 50%;
+      transform: rotateY(0deg);
+      translate: 0 0; /* evita subpixel jumps en algunos engines */
+    }
+    .flipBtn.flipped .inner{ transform: rotateY(180deg); }
+    .flipBtn.dragging .inner{ transition:none; }
+
+    .face{
+      box-sizing:border-box;
+      position:absolute;
+      inset:0;
+
+      border-radius: 18px;
+      box-shadow: 0 18px 34px rgba(0,0,0,.16);
+
+      display:flex;
+      align-items:center;
+      justify-content:center;
+
+      padding: 18px;
+      overflow:hidden;
+
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+
+      transform-origin: 50% 50%;
+    }
+
+    /* Front */
+    .front{
+      background: linear-gradient(165deg, var(--cream1), var(--cream2));
+      border: 8px solid var(--red);
+      outline: 3px solid var(--gold);
+      outline-offset: -8px;
+    }
+    .front::before{
+      content:"";
+      position:absolute;
+      inset: 14px;
+      border-radius: 12px;
+      border: 2px solid var(--goldLine);
+      box-shadow:
+        inset 0 0 0 1px rgba(209,162,58,.22),
+        inset 0 -28px 60px rgba(240,98,146,.10);
+      pointer-events:none;
+    }
+    .front::after{
+      content:"";
+      position:absolute;
+      inset:-25%;
+      background: radial-gradient(circle at 40% 30%, rgba(255,202,40,.18), rgba(255,255,255,0) 55%);
+      animation: glow 2.8s ease-in-out infinite;
+      pointer-events:none;
+    }
+    @keyframes glow{
+      0%,100%{ opacity:.7; transform: translateY(0); }
+      50%{ opacity:1; transform: translateY(6px); }
+    }
+
+    .magic{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap: 10px;
+      text-align:center;
+      z-index:1;
+    }
+    .star{
+      width: 120px;
+      height: 120px;
+      filter: drop-shadow(0 10px 14px rgba(255,179,0,.25));
+      animation: shimmer 2.1s ease-in-out infinite;
+    }
+    @keyframes shimmer{
+      0%,100%{ transform: rotate(0) scale(1); }
+      50%{ transform: rotate(6deg) scale(1.035); opacity:.93; }
+    }
+    .liberar{
+      font-weight: 950;
+      letter-spacing: 1.8px;
+      font-size: clamp(14px, 4vw, 18px);
+      color: var(--redDark);
+      text-transform: uppercase;
+      text-shadow: 0 2px 0 rgba(255,255,255,.65);
+    }
+    .swipeRow{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      font-size: 12px;
+      opacity: .92;
+      margin-top: -2px;
+    }
+    .chev{
+      width:18px;height:18px;border-radius:50%;
+      display:inline-flex;align-items:center;justify-content:center;
+      background: rgba(240,98,146,.12);
+      border: 1px solid rgba(240,98,146,.25);
+    }
+
+    /* Back */
+    .back{
+      transform: rotateY(180deg);
+      background:#fff;
+      border: 8px solid var(--pinkBorder);
+      outline: 2px solid rgba(240,98,146,.55);
+      outline-offset: -10px;
+    }
+    .back::before{
+      content:"";
+      position:absolute;
+      inset: 16px;
+      border-radius: 12px;
+      border: 1px dashed rgba(240,98,146,.55);
+      pointer-events:none;
+    }
+
+    .msg{
+      width:100%;
+      max-width: 360px;
+      height:100%;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      text-align:center;
+      line-height:1.43;
+      font-size: clamp(14px, 3.55vw, 16px);
+      padding: 0 8px;
+      gap: 10px;
+    }
+    .headline{
+      margin:0;
+      font-weight: 950;
+      color: var(--pinkText);
+      font-size: clamp(16px, 4.1vw, 18px);
+    }
+    .p{ margin:0; }
+    .highlight{ font-weight: 900; color:#8e0f45; }
+    .love{
+      margin:0;
+      font-weight: 950;
+      color: var(--pinkText);
+      font-size: clamp(16px, 4.5vw, 18px);
+    }
+    .sig{ margin:0; font-size: 12px; opacity:.78; }
+
+    .footer{
+      flex:0 0 auto;
+      text-align:center;
+      font-size: 12px;
+      opacity:.82;
+      padding-top: 2px;
+    }
+
+    @media (prefers-reduced-motion: reduce){
+      .petal{ animation:none; display:none; }
+      .inner{ transition:none; }
+      .heart{ animation:none; }
+      .star{ animation:none; }
+      .front::after{ animation:none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="petals" id="petals" aria-hidden="true"></div>
+
+  <main class="wrap">
+    <section class="panel" role="region" aria-label="Tarjeta de San Valentín">
+      <div class="top">
+        <div class="heart" aria-hidden="true"><span></span></div>
+        <div class="title">San Valentín — Carta Clow</div>
+      </div>
+
+      <p class="hint">Deslizá la carta a la izquierda o derecha para <strong>liberar magia</strong> ✨</p>
+
+      <div class="center">
+        <div class="stage">
+          <div class="flipBtn" id="flipBtn" role="button" tabindex="0" aria-pressed="false" aria-label="Deslizá para voltear la carta">
+            <div class="inner" id="inner">
+              <div class="face front">
+                <div class="magic">
+                  <svg class="star" viewBox="0 0 100 100" aria-hidden="true">
+                    <defs>
+                      <radialGradient id="gradStar" cx="35%" cy="30%" r="70%">
+                        <stop offset="0%" stop-color="#fffde7"/>
+                        <stop offset="35%" stop-color="#ffe082"/>
+                        <stop offset="70%" stop-color="#ffca28"/>
+                        <stop offset="100%" stop-color="#ffb300"/>
+                      </radialGradient>
+                    </defs>
+                    <path d="M50 6 L60 34 L90 34 L65 52 L74 82 L50 64 L26 82 L35 52 L10 34 L40 34 Z"
+                          fill="url(#gradStar)" stroke="#f57f17" stroke-width="2.6" />
+                    <circle cx="50" cy="50" r="7" fill="#fff8e1" stroke="#f57f17" stroke-width="2"/>
+                  </svg>
+
+                  <div class="liberar">LIBERAR MAGIA</div>
+
+                  <div class="swipeRow" aria-hidden="true">
+                    <span class="chev">◀</span>
+                    <span>Deslizá</span>
+                    <span class="chev">▶</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="face back">
+                <div class="msg">
+                  <p class="headline">Feliz nuestro primer San Valentín, mi amor.</p>
+
+                  <p class="p">
+                    Aunque hoy estemos lejos, <span class="highlight">mi corazón se queda con vos</span>.
+                    Llegaste a mi vida como una magia suave, inesperada y real; desde que estás,
+                    todo se siente más bonito.
+                  </p>
+
+                  <p class="p">
+                    Sos tan única como encontrar un <span class="highlight">tulipán azul</span>.
+                  </p>
+
+                  <p class="love">Te amo.</p>
+                  <p class="sig">— Danny</p>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer">Hecho con amor ✨🌸</div>
+    </section>
+  </main>
+
+  <script>
+    // ===== Petals =====
+    const petalsWrap = document.getElementById('petals');
+    const rand = (min,max)=>Math.random()*(max-min)+min;
+
+    function buildPetals(){
+      petalsWrap.innerHTML = "";
+      const count = Math.min(44, Math.max(18, Math.floor(window.innerWidth/18)));
+      for(let i=0;i<count;i++){
+        const p = document.createElement('div');
+        p.className = 'petal';
+        p.style.left = rand(0,100) + 'vw';
+        const s = rand(.75, 1.45);
+        p.style.transform = `rotate(${rand(-35,35)}deg) scale(${s})`;
+        p.style.animationDuration = `${rand(7,14)}s, ${rand(2.6,5.4)}s`;
+        p.style.animationDelay = `${rand(0,8)}s, ${rand(0,2)}s`;
+        p.style.opacity = rand(.55,.95);
+        petalsWrap.appendChild(p);
+      }
+    }
+    buildPetals();
+    let rT;
+    window.addEventListener('resize', ()=>{ clearTimeout(rT); rT=setTimeout(buildPetals, 160); });
+
+    // ===== Swipe-to-flip (inline SOLO mientras arrastrás) =====
+    const btn = document.getElementById('flipBtn');
+    const inner = document.getElementById('inner');
+
+    let startX = 0;
+    let dragging = false;
+    let flipped = false;
+
+    const SWIPE_THRESHOLD = 45;
+
+    function applyState(){
+      btn.classList.toggle('flipped', flipped);
+      btn.setAttribute('aria-pressed', flipped ? 'true' : 'false');
+    }
+
+    function endDrag(){
+      btn.classList.remove('dragging');
+      inner.style.transform = "";   // vuelve a CSS, evita saltos
+      applyState();
+    }
+
+    btn.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      dragging = true;
+      startX = e.clientX;
+      btn.classList.add('dragging');
+      btn.setPointerCapture(e.pointerId);
+    }, {passive:false});
+
+    btn.addEventListener('pointermove', (e) => {
+      if(!dragging) return;
+      const dx = e.clientX - startX;
+      const angle = Math.max(-35, Math.min(35, dx / 4));
+      const base = flipped ? 180 : 0;
+      inner.style.transform = `rotateY(${base + angle}deg)`;
+    });
+
+    btn.addEventListener('pointerup', (e) => {
+      if(!dragging) return;
+      dragging = false;
+      const dx = e.clientX - startX;
+      if (Math.abs(dx) >= SWIPE_THRESHOLD){
+        flipped = !flipped;
+        if (navigator.vibrate) navigator.vibrate(10);
+      }
+      endDrag();
+    });
+
+    btn.addEventListener('pointercancel', () => {
+      dragging = false;
+      endDrag();
+    });
+
+    // Tap fallback
+    btn.addEventListener('click', () => {
+      if(dragging) return;
+      flipped = !flipped;
+      endDrag();
+    });
+  </script>
+</body>
+</html>
